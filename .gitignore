@@ -1,0 +1,42 @@
+# ignorar archivos de cache notebook jupyter
+.ipynb_checkpoints/
+
+# ignorar archivos de cache de vscode
+.vscode/
+
+# ignorar archivos de cache de pycharm
+.idea/
+
+# ignorar archivo env
+.env
+
+# ignorar archivos .h y inc
+*.h
+*.inc
+
+# Entorno virtual específico
+env_tf-matpl-nump-py3.10/
+
+# Otros entornos virtuales genéricos
+venv/
+env/
+.env/
+.venv/
+ENV/
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+
+
+# ignorar carpetas
+otros/
+return_data/
+test/
