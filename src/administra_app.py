@@ -94,9 +94,7 @@ class AppManager:
 
         print("\n CARGA DE DATA A BASE DE DATOS\n")
         df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
-        print(df_to_sql.head(10))
-        df_to_sql.to_excel("df_to_sql.xlsx")
-        self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
+        #self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
 
 
 

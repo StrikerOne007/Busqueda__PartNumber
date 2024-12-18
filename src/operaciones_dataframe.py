@@ -37,10 +37,12 @@ class OperacionesDataframe():
         df_importacion['DS_DESC_COM'] = df_importacion['DS_DESC_COM'].str.upper().str.strip()
         df_deltron['PART_NUMBER'] = df_deltron['PART_NUMBER'].str.upper().str.strip()
         df_modelo['PART_NUMBER'] = df_modelo['PART_NUMBER'].str.upper().str.strip()
+
         if valores_nulos:
             df_importacion = df_importacion.fillna(valores_nulos)
 
-        # @profile
+
+        #@profile
         def busqueda_por_igualdad(campo_descripcion, conjunto_part_numbers, conjunto_pnumber_modelo,partnumber_found_desc):
 
             if partnumber_found_desc is None:
@@ -95,31 +97,85 @@ class OperacionesDataframe():
                         partnumber_found_desc.append(palabra)
                         return palabra
 
+            
+            # convertir lista a numpy array
+            conjunto_part_numbers = np.array(conjunto_part_numbers)
+            partnumber_found_desc = np.array(partnumber_found_desc)
+            saldo_part_num = conjunto_part_numbers[~np.isin(conjunto_part_numbers, partnumber_found_desc)]
+            saldo_part_num_chunks = np.array(sorted(saldo_part_num, key=len, reverse=True))
+            saldo_part_num_chunks = saldo_part_num_chunks.tolist()
+            mask = np.array([len(x) > 9 for x in saldo_part_num_chunks])
+            saldo_part_num_chunks_lenmay_9 = np.array(saldo_part_num_chunks)[mask]
+            chunks = np.array_split(saldo_part_num_chunks_lenmay_9, max(1, len(saldo_part_num_chunks_lenmay_9) // 300))
 
-            partnumber_found_desc = set(partnumber_found_desc)
-            saldo_part_num =  [partnumber for partnumber in set(conjunto_part_numbers) if partnumber not in partnumber_found_desc]
-            saldo_part_num_chunks = sorted(saldo_part_num, key=len, reverse=True)
-            saldo_part_num_chunks_lenmay_12 = [x for x in set(saldo_part_num_chunks) if len(x) > 12]
-            chunks = [saldo_part_num_chunks_lenmay_12[partnumb_del:partnumb_del+300] for partnumb_del in range(0,len(saldo_part_num_chunks_lenmay_12),300)]
 
-            if campo_descripcion.startswith("TARJETA MADRE") or campo_descripcion.startswith("TARJETA GRAFICA"):
+            
+            if campo_descripcion.startswith("COMPUTADORA, HEWLETT PACKARD"):
+                # Filtrar solo partnumbers que contengan "#" para computadoras HP
+                hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_9 if "#" in pn]
+                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 300))
+                
                 mejor_similitud = 0
                 mejor_partnumber = None
+                umbral = 60
+                
                 for chunk in chunks:
                     for partnumb_del in chunk:
                         similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
                         # print(f"Comparando: {partnumb_del} -> Similarity: {similarity}")
-
-
-                        if similarity > mejor_similitud and similarity > 90:
+                        if similarity > mejor_similitud and similarity > umbral:
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                
+            elif campo_descripcion.startswith("TARJETA MADRE"):
+                mejor_similitud = 0
+                mejor_partnumber = None
+                umbral = 90
+                
+                for chunk in chunks:
+                    for partnumb_del in chunk:
+                        similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                        if similarity > mejor_similitud and similarity > umbral:
+                            mejor_similitud = similarity
+                            mejor_partnumber = partnumb_del
+                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+            
+            elif campo_descripcion.startswith("TARJETA GRAFICA"):
+                mask = [len(pn) > 10  for pn in saldo_part_num_chunks_lenmay_9]
+                hp_chunks = np.array(saldo_part_num_chunks_lenmay_9)[mask]
+                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 300))
+                mejor_similitud = 0
+                mejor_partnumber = None
+                umbral_95 = 95
+                umbral_60 = 60
+                
+                # Primera pasada con umbral alto
+                for chunk in chunks:
+                    for partnumb_del in chunk:
+                        similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                        if similarity > mejor_similitud and similarity > umbral_95:
+                            mejor_similitud = similarity
+                            mejor_partnumber = partnumb_del
+
+                # Si no se encuentra coincidencia alta, intentar con umbral más bajo
+                if mejor_partnumber is None:
+                    # Extraer palabras clave de la descripción que podrían ser parte del partnumber
+                    palabras_clave = re.findall(r'RTX|RX|GTX', campo_descripcion)
+                    
+                    if palabras_clave:
+                        for chunk in chunks:
+                            for partnumb_del in chunk:
+                                # Verificar si el partnumber contiene alguna palabra clave
+                                if any(palabra in partnumb_del for palabra in palabras_clave):
+                                    similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                                    if similarity > mejor_similitud and similarity > umbral_60:
+                                        mejor_similitud = similarity
+                                        mejor_partnumber = partnumb_del
+
+                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
 
     
-            
-
-
 
         conjunto_part_numbers = df_deltron['PART_NUMBER'].values
         conjunto_part_numbers = np.array(sorted(conjunto_part_numbers, key=len, reverse=True))
@@ -142,7 +198,7 @@ class OperacionesDataframe():
 
 
 
-        # df_importacion.to_excel("df_importacion_15.xlsx")
+        df_importacion.to_excel("./return_data/df_importacion_16.xlsx")
 
 
 

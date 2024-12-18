@@ -50,9 +50,11 @@ if __name__ == "__main__":
                                         LIMIT 30
                                         ) IMPORTADORES
                         )
-                    # AND SN.ID IN (
-                    #          '64492'
-                    #     )
+                    AND SN.DS_LIBR_TRIBU = '20212331377'
+                    #AND SN.ID IN (
+                    #        '19327',
+                    #        '10284'
+                    #    )
                     # AND SNA.SA_Value IN ('MOTHERBOARDS', 'LAPTOP', 'DESKTOP PC', 'ALL IN ONE', 'SERVIDOR')
                     AND DS_FECHA >= '2019-01-01' AND  DS_FECHA < '2024-12-01'
                     ORDER BY
