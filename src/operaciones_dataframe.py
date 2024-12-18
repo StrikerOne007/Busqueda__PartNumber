@@ -1,15 +1,16 @@
-# from inspect import CO_ASYNC_GENERATOR
-# from select import kevent
+from src.conexionbd import DAO
+
 import operator
 import time
 import pandas as pd
-from src.conexionbd import DAO
 import re
 from rapidfuzz import fuzz
 import numpy as np
+
 import sys
 sys.path.append("C:\\Users\\gustavo.grillo\\1.ANALISIS_DATA\\SERVIDOR\\busqueda_partnumber\\src")
 import fuzzrapid
+
 
 
 class OperacionesDataframe():
@@ -63,42 +64,121 @@ class OperacionesDataframe():
             
 
 
+        # HACER BUSQUEDA POR IGUALDAD DE PARTNUMBER
+
+
             lista_modelo, lista_parnum_mod, lista_codproducto = map(list, zip(*conjunto_pnumber_modelo))
 
 
-            if campo_descripcion.startswith("COMPUTADORA, ASUS") or campo_descripcion.startswith("TARJETA MADRE, TEROS"):
+            if campo_descripcion.startswith("COMPUTADORA, ASUS") or campo_descripcion.startswith("TARJETA MADRE, TEROS")\
+                or campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
+                    or campo_descripcion[:19] == "COMPUTADORA,ADVANCE" or campo_descripcion.startswith("COMPUTADORA,ASUS")\
+                        or campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
                 for palabra in palabras_filtradas:
+
                     if len(palabra) > 5 and palabra in lista_modelo:                     
                         indice = lista_modelo.index(palabra)
                         indice_partnumber = lista_parnum_mod[indice]
                         partnumber_found_desc.append(indice_partnumber)
                         return "@modelo-" + indice_partnumber
+                    
                     if len(palabra) > 5 and palabra in lista_codproducto:
-                        print("se cumple condicion donde la palabra esta en lista_codproducto")
                         indice = lista_codproducto.index(palabra)
                         indice_partnumber = lista_parnum_mod[indice]
                         partnumber_found_desc.append(indice_partnumber)
                         return "@codprodc-" + indice_partnumber
+                    
+                    if campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO"):
+                        for modelo in lista_modelo:
+                            palabras_clave = re.findall(modelo, campo_descripcion)
+                            #print(palabras_clave)
+                            for palabra in palabras_clave:
+
+                                if isinstance(palabra, str):
+                                    indice_modelo = lista_modelo.index(modelo)
+                                    indice_partnumber = lista_parnum_mod[indice_modelo]
+                                    partnumber_found_desc.append(indice_partnumber)
+                                    return "@modelo2-" + indice_partnumber
+                                
+                    if campo_descripcion.startswith("COMPUTADORA, ASUS") or campo_descripcion.startswith("COMPUTADORA,ASUS"):
+                        for modelo in lista_modelo:
+                            # Eliminar todo después del / (incluyendo espacios opcionales antes)
+                            modelo_preview = modelo
+                            modelo = re.sub(r'\s*/.*$', '', modelo)
+                            palabras_clave = re.findall(modelo, campo_descripcion)
+                            for palabra in palabras_clave:
+
+                                if isinstance(palabra, str):
+                                    indice_modelo = lista_modelo.index(modelo_preview)
+                                    indice_partnumber = lista_parnum_mod[indice_modelo]
+                                    partnumber_found_desc.append(indice_partnumber)
+                                    return "@modelo2-" + indice_partnumber
+                                
+                    if campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
+                        for modelo in lista_modelo:
+                            palabras_clave = re.findall(modelo, campo_descripcion)
+                            print(palabras_clave)
+                            for palabra in palabras_clave:
+                                if isinstance(palabra, str):
+                                    print(palabra)
+                                    indice_modelo = lista_modelo.index(modelo)
+                                    indice_partnumber = lista_parnum_mod[indice_modelo]
+                                    partnumber_found_desc.append(indice_partnumber)
+                                    return "@modelo2-" + indice_partnumber
+                                
+                    if campo_descripcion[:19].strip() == "COMPUTADORA,ADVANCE":
+                        conjunto_part_numbers = np.array(conjunto_part_numbers)
+                        conjunto_part_numbers = conjunto_part_numbers[::-1]
+                        for partnumber in conjunto_part_numbers:
+                            if partnumber.startswith("ADV-"):
+                                if partnumber[4:10] in palabras_filtradas: 
+                                    partnumber_found_desc.append(partnumber)
+                                    return "@ADV_inicio-" + partnumber
+                            
+                        
+                            
+            if campo_descripcion.startswith("COMPUTADORA,LENOVO"):
+                for palabra in palabras_filtradas:
+                    palabra = palabra.replace('-', '')
+                    if palabra in conjunto_part_numbers:
+                        partnumber_found_desc.append(palabra)
+                        print(palabra)  
+                        return "@partnumber_inicia_LENOVO-" + palabra
 
 
 
             if campo_descripcion[:13] == "TARJETA MADRE" or campo_descripcion[:15] == "TARJETA GRAFICA" \
                 or campo_descripcion.startswith("MOUSE., TEROS"):
                 for partnumber in conjunto_part_numbers:
+
                     if partnumber in campo_descripcion:
                         partnumber_found_desc.append(partnumber)
-                        return "@tarjeta-" + partnumber
+                        return "@tarjeta-" + partnumber            
 
+
+
+            if campo_descripcion.startswith("COMPUTADORA, LENOVO"):
+                palabras_filtradas = [palabra.replace('-', '') for palabra in palabras_filtradas]
+                for partnumber in conjunto_part_numbers:
+
+                    if partnumber in palabras_filtradas:
+                        partnumber_found_desc.append(partnumber)
+                        return partnumber
+                    
 
 
             if len(palabras_filtradas) > 0:
                 for palabra in palabras_filtradas:
+
                     if palabra in conjunto_part_numbers:
                         partnumber_found_desc.append(palabra)
                         return palabra
 
-            
-            # convertir lista a numpy array
+
+
+         # HACER BUSQUEDA POR SIMILITUD DE PARTNUMBER
+
+
             conjunto_part_numbers = np.array(conjunto_part_numbers)
             partnumber_found_desc = np.array(partnumber_found_desc)
             saldo_part_num = conjunto_part_numbers[~np.isin(conjunto_part_numbers, partnumber_found_desc)]
@@ -109,15 +189,13 @@ class OperacionesDataframe():
             chunks = np.array_split(saldo_part_num_chunks_lenmay_9, max(1, len(saldo_part_num_chunks_lenmay_9) // 300))
 
 
-            
-            if campo_descripcion.startswith("COMPUTADORA, HEWLETT PACKARD"):
-                # Filtrar solo partnumbers que contengan "#" para computadoras HP
+            if campo_descripcion.startswith("COMPUTADORA, HEWLETT PACKARD") or campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
                 hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_9 if "#" in pn]
                 chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 300))
                 
                 mejor_similitud = 0
                 mejor_partnumber = None
-                umbral = 60
+                umbral = 80
                 
                 for chunk in chunks:
                     for partnumb_del in chunk:
@@ -127,18 +205,20 @@ class OperacionesDataframe():
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
-                
+            
             elif campo_descripcion.startswith("TARJETA MADRE"):
                 mejor_similitud = 0
                 mejor_partnumber = None
-                umbral = 90
+                umbral = 60
                 
                 for chunk in chunks:
                     for partnumb_del in chunk:
                         similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+
                         if similarity > mejor_similitud and similarity > umbral:
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
+
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
             
             elif campo_descripcion.startswith("TARJETA GRAFICA"):
@@ -158,17 +238,16 @@ class OperacionesDataframe():
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
 
-                # Si no se encuentra coincidencia alta, intentar con umbral más bajo
                 if mejor_partnumber is None:
-                    # Extraer palabras clave de la descripción que podrían ser parte del partnumber
                     palabras_clave = re.findall(r'RTX|RX|GTX', campo_descripcion)
                     
                     if palabras_clave:
                         for chunk in chunks:
                             for partnumb_del in chunk:
-                                # Verificar si el partnumber contiene alguna palabra clave
+
                                 if any(palabra in partnumb_del for palabra in palabras_clave):
                                     similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                                    
                                     if similarity > mejor_similitud and similarity > umbral_60:
                                         mejor_similitud = similarity
                                         mejor_partnumber = partnumb_del
@@ -197,10 +276,7 @@ class OperacionesDataframe():
 
 
 
-
-        df_importacion.to_excel("./return_data/df_importacion_16.xlsx")
-
-
+        # df_importacion.to_excel("./return_data/df_importacion_18.xlsx")
 
 
 
@@ -208,7 +284,9 @@ class OperacionesDataframe():
         self.dataframe_importacion = df_importacion.copy()
         # guardar df_deltron en excel
 
-        print(f"Busqueda part numbers. Tiempo de ejecución: {time.time()-inicio} segundos")
+        print("***")
+        print(f"\n\nBusqueda part numbers. Tiempo de ejecución: {time.time()-inicio} segundos")
+        print("\n")
         return self.dataframe_importacion
         # except Exception as e:
         #     print(f"Problema presentado en {e} - buscar_part_number")

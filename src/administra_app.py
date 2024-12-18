@@ -80,7 +80,8 @@ class AppManager:
         # self.operaciones.dataframe_importacion.to_excel("df_importacion_revision.xlsx")
 
 
-        print("1.-Aplicando operaciones para busqueda de datos por Sistemas...")
+        print("1.-Aplicando operaciones para busqueda de datos por Sistemas...\n")
+        print("***")
         df_busqueda_partnumber_importacion = self.operaciones.buscar_part_number(
             campo_data_deltron = 'PART_NUMBER',
             campo_iterable = 'value',
@@ -89,7 +90,7 @@ class AppManager:
             valores_nulos = {'value':'0','SA_Value':'0'}
         )
         if df_busqueda_partnumber_importacion is not None:
-            print(df_busqueda_partnumber_importacion.head())
+            print(df_busqueda_partnumber_importacion.head(100))
 
 
         print("\n CARGA DE DATA A BASE DE DATOS\n")
