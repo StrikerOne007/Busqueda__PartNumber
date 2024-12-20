@@ -90,12 +90,27 @@ class AppManager:
             valores_nulos = {'value':'0','SA_Value':'0'}
         )
         if df_busqueda_partnumber_importacion is not None:
-            print(df_busqueda_partnumber_importacion.head(100))
+            pass
 
 
         print("\n CARGA DE DATA A BASE DE DATOS\n")
-        df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
-        #self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
+        # CONVERTIR EL RESULTADO DE BUSQUEDA A STRING
+        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].astype(str)
+        
+
+
+        def withdraw_words(x):
+            if x is not None and x.startswith("@"):
+                return x[x.find("-")+1:]
+            else:
+                return x
+            
+        # print(df_busqueda_partnumber_importacion.head())
+        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].apply(withdraw_words)
+        print(df_busqueda_partnumber_importacion.head())
+        print(f"TAMAÑO DE LA TABLA: {df_busqueda_partnumber_importacion.shape}")
+        #df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
+        # self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
 
 
 

@@ -6,7 +6,6 @@ import pandas as pd
 import re
 from rapidfuzz import fuzz
 import numpy as np
-
 import sys
 sys.path.append("C:\\Users\\gustavo.grillo\\1.ANALISIS_DATA\\SERVIDOR\\busqueda_partnumber\\src")
 import fuzzrapid
@@ -33,8 +32,8 @@ class OperacionesDataframe():
         df_importacion = self.dataframe_importacion.copy()
         df_deltron = self.dataframe_deltron.copy()
         df_modelo = self.dataframe_modelo.copy()
-        df_modelo = df_modelo[df_modelo['PART_NUMBER'].str.len() > 5]
-        df_deltron = df_deltron[df_deltron['PART_NUMBER'].str.len() > 5]
+        df_modelo = df_modelo[df_modelo['PART_NUMBER'].str.len() > 4]
+        df_deltron = df_deltron[df_deltron['PART_NUMBER'].str.len() > 4]
         df_importacion['DS_DESC_COM'] = df_importacion['DS_DESC_COM'].str.upper().str.strip()
         df_deltron['PART_NUMBER'] = df_deltron['PART_NUMBER'].str.upper().str.strip()
         df_modelo['PART_NUMBER'] = df_modelo['PART_NUMBER'].str.upper().str.strip()
@@ -43,7 +42,7 @@ class OperacionesDataframe():
             df_importacion = df_importacion.fillna(valores_nulos)
 
 
-        #@profile
+        # @profile
         def busqueda_por_igualdad(campo_descripcion, conjunto_part_numbers, conjunto_pnumber_modelo,partnumber_found_desc):
 
             if partnumber_found_desc is None:
@@ -55,7 +54,7 @@ class OperacionesDataframe():
 
             palabras_filtradas = [
                 palabra for palabra in lista_descripcion 
-                    if len(palabra) > 4 and (
+                    if len(palabra) > 4 and palabra[:5] != "RYZEN" and (
                         ( any(c.isalpha() for c in palabra) and any(c.isdigit() for c in palabra) ) or
                         (palabra.replace('.', '').isdigit() and '.' in palabra) or
                         (palabra.replace('-', '').isdigit() and '-' in palabra) 
@@ -63,7 +62,7 @@ class OperacionesDataframe():
                 ]
             
 
-
+        
         # HACER BUSQUEDA POR IGUALDAD DE PARTNUMBER
 
 
@@ -73,7 +72,7 @@ class OperacionesDataframe():
             if campo_descripcion.startswith("COMPUTADORA, ASUS") or campo_descripcion.startswith("TARJETA MADRE, TEROS")\
                 or campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
                     or campo_descripcion[:19] == "COMPUTADORA,ADVANCE" or campo_descripcion.startswith("COMPUTADORA,ASUS")\
-                        or campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
+                        or campo_descripcion.startswith("COMPUTADORA,HEWLETT") or campo_descripcion.startswith("COMPUTADORA,DELL"):
                 for palabra in palabras_filtradas:
 
                     if len(palabra) > 5 and palabra in lista_modelo:                     
@@ -90,10 +89,23 @@ class OperacionesDataframe():
                     
                     if campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO"):
                         for modelo in lista_modelo:
-                            palabras_clave = re.findall(modelo, campo_descripcion)
-                            #print(palabras_clave)
+                            # Primero eliminamos todo lo que no necesitamos
+                            patron = re.compile(
+                                r'^.*?(?:ideapad|IDEAPAD)'  # todo hasta ideapad/IDEAPAD
+                                r'(?:\s+(?:gaming|slim|flex))?\s*'  # palabras opcionales como gaming/slim/flex
+                                r'(?:\d+\s+)?'  # números opcionales
+                                r'(?=\w+$)',    # hasta encontrar la última palabra
+                                re.IGNORECASE)
+                            
+                            modelo_sin_patron = re.sub(patron, '', modelo)
+                            modelo_limpio = modelo_sin_patron.strip()
+                            
+                            
+                            if modelo_limpio:  # Solo si queda algo después de limpiar
+                                palabras_clave = re.findall(modelo_limpio if len(modelo_limpio) > 3 else modelo, campo_descripcion)
+                            
                             for palabra in palabras_clave:
-
+                            
                                 if isinstance(palabra, str):
                                     indice_modelo = lista_modelo.index(modelo)
                                     indice_partnumber = lista_parnum_mod[indice_modelo]
@@ -117,32 +129,45 @@ class OperacionesDataframe():
                     if campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
                         for modelo in lista_modelo:
                             palabras_clave = re.findall(modelo, campo_descripcion)
-                            print(palabras_clave)
                             for palabra in palabras_clave:
                                 if isinstance(palabra, str):
-                                    print(palabra)
                                     indice_modelo = lista_modelo.index(modelo)
                                     indice_partnumber = lista_parnum_mod[indice_modelo]
                                     partnumber_found_desc.append(indice_partnumber)
                                     return "@modelo2-" + indice_partnumber
                                 
-                    if campo_descripcion[:19].strip() == "COMPUTADORA,ADVANCE":
+                    if campo_descripcion.startswith("COMPUTADORA,ADVANCE") or campo_descripcion.startswith("COMPUTADORA, ADVANCE"):
                         conjunto_part_numbers = np.array(conjunto_part_numbers)
                         conjunto_part_numbers = conjunto_part_numbers[::-1]
+                        print(f" conjunto_part_numbers: {conjunto_part_numbers}")
                         for partnumber in conjunto_part_numbers:
                             if partnumber.startswith("ADV-"):
-                                if partnumber[4:10] in palabras_filtradas: 
+                                print(partnumber)
+                                if partnumber in palabras_filtradas: 
+                                    partnumber_found_desc.append(partnumber)
+                                    return "@ADV_inicio-" + partnumber
+                                elif partnumber[4:10] in palabras_filtradas: 
                                     partnumber_found_desc.append(partnumber)
                                     return "@ADV_inicio-" + partnumber
                             
-                        
-                            
+
+
+            
+            if campo_descripcion.startswith("MOTHERBOARD,GIGABYTE") or campo_descripcion.startswith("MOTHERBOARD, GIGABYTE"):
+                for partnumber in conjunto_part_numbers:
+                    palabras_clave = re.findall(re.escape(partnumber), campo_descripcion)
+                    for palabra in palabras_clave:
+
+                        if isinstance(palabra, str):
+                            partnumber_found_desc.append(partnumber)
+                            return "@partnumber_inicia_GIGABYTE-" + partnumber
+
+
             if campo_descripcion.startswith("COMPUTADORA,LENOVO"):
                 for palabra in palabras_filtradas:
                     palabra = palabra.replace('-', '')
                     if palabra in conjunto_part_numbers:
-                        partnumber_found_desc.append(palabra)
-                        print(palabra)  
+                        partnumber_found_desc.append(palabra) 
                         return "@partnumber_inicia_LENOVO-" + palabra
 
 
@@ -163,10 +188,10 @@ class OperacionesDataframe():
 
                     if partnumber in palabras_filtradas:
                         partnumber_found_desc.append(partnumber)
-                        return partnumber
+                        return "@partnumber_inicia_LENOVO-" + partnumber
                     
-
-
+            
+            
             if len(palabras_filtradas) > 0:
                 for palabra in palabras_filtradas:
 
@@ -179,24 +204,41 @@ class OperacionesDataframe():
          # HACER BUSQUEDA POR SIMILITUD DE PARTNUMBER
 
 
-            conjunto_part_numbers = np.array(conjunto_part_numbers)
-            partnumber_found_desc = np.array(partnumber_found_desc)
+            conjunto_part_numbers = np.unique(conjunto_part_numbers)
+            partnumber_found_desc = np.unique(partnumber_found_desc)
             saldo_part_num = conjunto_part_numbers[~np.isin(conjunto_part_numbers, partnumber_found_desc)]
-            saldo_part_num_chunks = np.array(sorted(saldo_part_num, key=len, reverse=True))
-            saldo_part_num_chunks = saldo_part_num_chunks.tolist()
+            saldo_part_num_chunks = sorted(saldo_part_num, key=len, reverse=True)
             mask = np.array([len(x) > 9 for x in saldo_part_num_chunks])
             saldo_part_num_chunks_lenmay_9 = np.array(saldo_part_num_chunks)[mask]
-            chunks = np.array_split(saldo_part_num_chunks_lenmay_9, max(1, len(saldo_part_num_chunks_lenmay_9) // 300))
+            chunks = np.array_split(saldo_part_num_chunks_lenmay_9, max(1, len(saldo_part_num_chunks_lenmay_9) // 1000))
 
 
             if campo_descripcion.startswith("COMPUTADORA, HEWLETT PACKARD") or campo_descripcion.startswith("COMPUTADORA,HEWLETT"):
                 hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_9 if "#" in pn]
-                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 300))
+                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 1000))
                 
                 mejor_similitud = 0
                 mejor_partnumber = None
-                umbral = 80
+                umbral = 60
                 
+                for chunk in chunks:
+                    for partnumb_del in chunk:
+                        # if partnumb_del.startswith("6J4S7LT#ABM"):
+                        #     print(partnumb_del)
+                        #     break
+                        similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                        #print(similarity)
+                        # print(f"Comparando: {partnumb_del} -> Similarity: {similarity}")
+                        if similarity > mejor_similitud and similarity > umbral:
+                            mejor_similitud = similarity
+                            mejor_partnumber = partnumb_del
+                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+            
+            elif campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO"):                
+                mejor_similitud = 0
+                mejor_partnumber = None
+                umbral = 75
+
                 for chunk in chunks:
                     for partnumb_del in chunk:
                         similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
@@ -224,11 +266,14 @@ class OperacionesDataframe():
             elif campo_descripcion.startswith("TARJETA GRAFICA"):
                 mask = [len(pn) > 10  for pn in saldo_part_num_chunks_lenmay_9]
                 hp_chunks = np.array(saldo_part_num_chunks_lenmay_9)[mask]
-                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 300))
+                chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 1000))
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral_95 = 95
                 umbral_60 = 60
+                
+        
+                
                 
                 # Primera pasada con umbral alto
                 for chunk in chunks:
@@ -236,6 +281,7 @@ class OperacionesDataframe():
                         similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
                         if similarity > mejor_similitud and similarity > umbral_95:
                             mejor_similitud = similarity
+                            
                             mejor_partnumber = partnumb_del
 
                 if mejor_partnumber is None:
@@ -254,7 +300,8 @@ class OperacionesDataframe():
 
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
 
-    
+
+
 
         conjunto_part_numbers = df_deltron['PART_NUMBER'].values
         conjunto_part_numbers = np.array(sorted(conjunto_part_numbers, key=len, reverse=True))
@@ -276,14 +323,13 @@ class OperacionesDataframe():
 
 
 
-        # df_importacion.to_excel("./return_data/df_importacion_18.xlsx")
-
+        # df_importacion.to_excel("./return_data/df_importacion_19.xlsx")
+        
 
 
 
         self.dataframe_importacion = df_importacion.copy()
-        # guardar df_deltron en excel
-
+        
         print("***")
         print(f"\n\nBusqueda part numbers. Tiempo de ejecución: {time.time()-inicio} segundos")
         print("\n")
