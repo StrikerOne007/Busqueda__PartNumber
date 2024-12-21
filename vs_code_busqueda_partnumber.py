@@ -51,11 +51,12 @@ if __name__ == "__main__":
                                                     ) IMPORTADORES
                                     )
                                 # AND SN.DS_LIBR_TRIBU = '20212331377'
-                                AND SN.ID IN (
-                                        '112473'
-                                )
+                                # AND SN.ID IN (
+                                #         '930196'
+                                # )
                                 # AND SNA.SA_Value IN ('MOTHERBOARDS', 'LAPTOP', 'DESKTOP PC', 'ALL IN ONE', 'SERVIDOR')
                                 AND DS_FECHA >= '2019-01-01' AND  DS_FECHA < '2024-12-01'
+                                AND DS_PartNumber IS NULL
                                 ORDER BY
                                     SN.ID
                                 # LIMIT 1000;

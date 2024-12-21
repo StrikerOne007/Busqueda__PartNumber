@@ -108,9 +108,10 @@ class AppManager:
         # print(df_busqueda_partnumber_importacion.head())
         df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].apply(withdraw_words)
         print(df_busqueda_partnumber_importacion.head())
+
         print(f"TAMAÑO DE LA TABLA: {df_busqueda_partnumber_importacion.shape}")
-        #df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
-        # self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
+        df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
+        self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
 
 
 
