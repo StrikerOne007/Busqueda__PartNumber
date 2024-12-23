@@ -111,7 +111,7 @@ class AppManager:
 
         print(f"TAMAÑO DE LA TABLA: {df_busqueda_partnumber_importacion.shape}")
         df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
-        self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
+        # self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
 
 
 

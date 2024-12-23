@@ -42,7 +42,7 @@ class OperacionesDataframe():
             df_importacion = df_importacion.fillna(valores_nulos)
 
 
-        @profile
+        # @profile
         def busqueda_por_igualdad(campo_descripcion, conjunto_part_numbers, conjunto_pnumber_modelo,partnumber_found_desc):
 
             if partnumber_found_desc is None:
@@ -63,7 +63,7 @@ class OperacionesDataframe():
                 ]
             
 
-        
+            print(palabras_filtradas)
         # HACER BUSQUEDA POR IGUALDAD DE PARTNUMBER
         
 
@@ -190,7 +190,8 @@ class OperacionesDataframe():
                     if partnumber in palabras_filtradas:
                         partnumber_found_desc.append(partnumber)
                         return "@partnumber_inicia_LENOVO-" + partnumber
-                    
+
+                                
             
         
             conjunto_partnumber_hashtag = [pn[:pn.find("#")] for pn in conjunto_part_numbers if "#" in pn]
@@ -221,7 +222,7 @@ class OperacionesDataframe():
             mask = np.array([len(x) > 8 for x in saldo_part_num_chunks])
             saldo_part_num_chunks_lenmay_8 = np.array(saldo_part_num_chunks)[mask]
             chunks = np.array_split(saldo_part_num_chunks_lenmay_8, max(1, len(saldo_part_num_chunks_lenmay_8) // 1000))
-
+            
 
             if "HEWLETT PACKARD" in campo_descripcion:
                 hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_8 if "#" in pn]
@@ -242,8 +243,8 @@ class OperacionesDataframe():
             
             elif campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
                 or campo_descripcion.startswith("MEMORIA RAM, KINGSTON") or 'TEROS' in campo_descripcion\
-                    or 'AORUS' in campo_descripcion or 'ASUS' in campo_descripcion or 'WESTERN DIGITAL' in campo_descripcion\
-                        or 'SEAGATE' in campo_descripcion or 'ADVANCE' in campo_descripcion:                
+                    or 'AORUS' in campo_descripcion or 'ASUS' in campo_descripcion\
+                        or 'SEAGATE' in campo_descripcion or 'ADVANCE' in campo_descripcion:
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral = 75
@@ -257,8 +258,8 @@ class OperacionesDataframe():
                             mejor_partnumber = partnumb_del
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
             
-            elif campo_descripcion.startswith("TARJETA MADRE") or 'GIGABYTE' in campo_descripcion or 'MSI' in campo_descripcion:
-
+            elif campo_descripcion.startswith("TARJETA MADRE") or 'GIGABYTE' in campo_descripcion\
+                    or 'MSI' in campo_descripcion or 'WESTER' in campo_descripcion:
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral = 60
@@ -280,33 +281,36 @@ class OperacionesDataframe():
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral_95 = 95
-                umbral_60 = 60
                 
                 # Primera pasada con umbral alto
                 for chunk in chunks:
                     for partnumb_del in chunk:
                         similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
                         if similarity > mejor_similitud and similarity > umbral_95:
-                            mejor_similitud = similarity
-                            
+                            mejor_similitud = similarity  
                             mejor_partnumber = partnumb_del
 
-                if mejor_partnumber is None:
-                    palabras_clave = re.findall(r'RTX|RX|GTX', campo_descripcion)
-                    
-                    if palabras_clave:
-                        for chunk in chunks:
-                            for partnumb_del in chunk:
-
-                                if any(palabra in partnumb_del for palabra in palabras_clave):
-                                    similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
-                                    
-                                    if similarity > mejor_similitud and similarity > umbral_60:
-                                        mejor_similitud = similarity
-                                        mejor_partnumber = partnumb_del
-
                 return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+            
+            elif 'RX' in campo_descripcion or 'RTX' in campo_descripcion or 'GTX' in campo_descripcion\
+                or 'LANDBYTE' in campo_descripcion:              
+                mejor_similitud = 0
+                mejor_partnumber = None
+                umbral = 77.5
 
+                for chunk in chunks:
+                    for partnumb_del in chunk:
+                        similarity = fuzzrapid.funcion_fuzz(partnumb_del, campo_descripcion)
+                        # print(f"Comparando: {partnumb_del} -> Similarity: {similarity}")
+                        if similarity > mejor_similitud and similarity > umbral:
+                            mejor_similitud = similarity
+                            mejor_partnumber = partnumb_del
+                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                
+
+        
+
+            
 
 
 
@@ -508,12 +512,23 @@ class OperacionesDataframe():
             importacion_total.drop(
                 ['Probalidad_sistemas_GD','Probalidad_IA'],axis=1
             )
-            estilo_importacion_total = (
-            importacion_total.style
-            .background_gradient(cmap='Pastel1', subset=['Probalidad_sistemas_GD','Probalidad_IA','Segm_prob_sistemas_GD','Segm_prob_IA'])
-            .format({'Probalidad_sistemas_GD':'{:.2f}%','Probalidad_IA':'{:.2f}%','Segm_prob_sistemas_GD':'{:.2f}%','Segm_prob_IA': '{:.2f}%'})
+            # En lugar de usar style.background_gradient
+            writer = pd.ExcelWriter(
+                f"part_number_{importacion_total['DS_IMPORTADOR'][0]}.xlsx",
+                engine='openpyxl'
             )
-            estilo_importacion_total.to_excel(f"part_number_{importacion_total['DS_IMPORTADOR'][0]}.xlsx")
+            importacion_total.to_excel(writer, index=False)
+            workbook = writer.book
+            worksheet = writer.sheets['Sheet1']
+            
+            # Aplicar formato básico
+            for col in ['Probalidad_sistemas_GD', 'Probalidad_IA', 'Segm_prob_sistemas_GD', 'Segm_prob_IA']:
+                col_idx = importacion_total.columns.get_loc(col)
+                for row in range(len(importacion_total)):
+                    cell = worksheet.cell(row=row+2, column=col_idx+1)
+                    cell.number_format = '0.00%'
+            
+            writer.save()
             self.dataframe_importacion = importacion_total.copy()
             print("Data procesada!!!\n")
             print(f"Procesar data final: tiempo de ejecucion {time.time()-inicio} segundos")
