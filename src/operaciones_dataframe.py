@@ -9,16 +9,19 @@ import numpy as np
 import sys
 sys.path.append("C:\\Users\\gustavo.grillo\\1.ANALISIS_DATA\\SERVIDOR\\busqueda_partnumber\\src")
 import fuzzrapid
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 
 class OperacionesDataframe():
     def __init__(self,dataframe_importacion=None,dataframe_deltron=None,dataframe_modelo=None,
                 data_final=None, data_final_sist=None, data_final_ia=None):
+        self.conexion_dao = DAO()
         self.dataframe_importacion = dataframe_importacion
         self.dataframe_deltron = dataframe_deltron
         self.dataframe_modelo = dataframe_modelo
-        self.conexion_dao = DAO()
+        self.conjunto_part_numbers_hashtag = None
 
 
 
@@ -28,18 +31,22 @@ class OperacionesDataframe():
 
         # try:
         inicio = time.time()
-        self.dataframe_importacion.drop_duplicates(subset=['DS_DESC_COM'], keep='first', inplace=True)
         df_importacion = self.dataframe_importacion.copy()
         df_deltron = self.dataframe_deltron.copy()
         df_modelo = self.dataframe_modelo.copy()
+
+        if valores_nulos:
+            df_importacion = df_importacion.fillna(valores_nulos)
+
         df_modelo = df_modelo[df_modelo['PART_NUMBER'].str.len() > 4]
         df_deltron = df_deltron[df_deltron['PART_NUMBER'].str.len() > 4]
         df_importacion['DS_DESC_COM'] = df_importacion['DS_DESC_COM'].str.upper().str.strip()
         df_deltron['PART_NUMBER'] = df_deltron['PART_NUMBER'].str.upper().str.strip()
+        df_deltron['PRODUCTO'] = df_deltron['PRODUCTO'].str.upper().str.strip()
         df_modelo['PART_NUMBER'] = df_modelo['PART_NUMBER'].str.upper().str.strip()
 
-        if valores_nulos:
-            df_importacion = df_importacion.fillna(valores_nulos)
+        self.conjunto_part_numbers_hashtag = [pn[:pn.find("#")] for pn in df_deltron['PART_NUMBER'].values if "#" in pn]
+
 
 
         # @profile
@@ -63,14 +70,14 @@ class OperacionesDataframe():
                 ]
             
 
-            print(palabras_filtradas)
+            
         # HACER BUSQUEDA POR IGUALDAD DE PARTNUMBER
         
-
+            # print(f"CANTIDAD DE REGISTROS: {self.dataframe_importacion.shape}")
             lista_modelo, lista_parnum_mod, lista_codproducto = map(list, zip(*conjunto_pnumber_modelo))
 
             
-            if campo_descripcion.startswith("TARJETA MADRE, TEROS") or campo_descripcion.startswith("COMPUTADORA, MSI")\
+            if campo_descripcion.startswith("TARJETA MADRE") or campo_descripcion.startswith("COMPUTADORA, MSI")\
                 or campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
                     or campo_descripcion[:19] == "COMPUTADORA,ADVANCE" or campo_descripcion.startswith("COMPUTADORA, ADVANCE,")\
                         or campo_descripcion.startswith("COMPUTADORA,HEWLETT") or campo_descripcion.startswith("COMPUTADORA,DELL")\
@@ -151,10 +158,41 @@ class OperacionesDataframe():
                                     partnumber_found_desc.append(partnumber)
                                     return "@ADV_inicio-" + partnumber
                             
-
-
+            def eliminar_parentesis(palabra):
+                return palabra.replace('(', '').replace(')', '')
             
-            if campo_descripcion.startswith("MOTHERBOARD,GIGABYTE") or campo_descripcion.startswith("MOTHERBOARD, GIGABYTE"):
+            if 'HEWLETT' in campo_descripcion:
+                retirar_hashtag_palabras_filtradas = [palabra[:palabra.find('#')] for palabra in palabras_filtradas if '#' in palabra]
+                if retirar_hashtag_palabras_filtradas:
+                    for partnumber in conjunto_part_numbers:
+                        partnumber = eliminar_parentesis(partnumber)
+                        if partnumber in retirar_hashtag_palabras_filtradas:
+                            return "@partnumber_inicia_HEWLETT-" + partnumber
+
+                        else:
+                            palabras_clave = re.findall(retirar_hashtag_palabras_filtradas[0], partnumber) 
+                            if palabras_clave:
+                                return "@partnumber_inicia_HEWLETT-" + partnumber
+                else:
+                    for palabra in palabras_filtradas:
+                        palabra = eliminar_parentesis(palabra)
+                        if "(" in palabra or ")" in palabra:
+                            print(f"palabra: {palabra}")
+                            break
+                        palabras_clave = re.findall(palabra, campo_descripcion)
+                        logging.debug(f"palabra: {palabras_clave}")
+
+                        #     return f"@partnumber_inicia_HEWLETT- {palabras_clave}"
+
+                        # except re.error as e:
+                        #     print(f"Error de expresion regular {str(e)}")
+                        # except Exception as e:
+                        #     print(f"Error generado {str(e)}")
+                        # # logging.error(f"palabras_clave: {palabras_clave}")
+                    
+
+            if campo_descripcion.startswith("MOTHERBOARD,GIGABYTE") or campo_descripcion.startswith("MOTHERBOARD, GIGABYTE")\
+                or 'TRIPPLITE' in campo_descripcion:
                 for partnumber in conjunto_part_numbers:
                     palabras_clave = re.findall(re.escape(partnumber), campo_descripcion)
                     for palabra in palabras_clave:
@@ -164,13 +202,12 @@ class OperacionesDataframe():
                             return "@partnumber_inicia_GIGABYTE-" + partnumber
 
 
-            if campo_descripcion.startswith("COMPUTADORA,LENOVO"):
+            if campo_descripcion.startswith("COMPUTADORA,LENOVO") or 'TEROS' in campo_descripcion:
                 for palabra in palabras_filtradas:
                     palabra = palabra.replace('-', '')
                     if palabra in conjunto_part_numbers:
                         partnumber_found_desc.append(palabra) 
                         return "@partnumber_inicia_LENOVO-" + palabra
-
 
 
             if campo_descripcion[:13] == "TARJETA MADRE" or campo_descripcion[:15] == "TARJETA GRAFICA" \
@@ -182,7 +219,6 @@ class OperacionesDataframe():
                         return "@tarjeta-" + partnumber            
 
 
-
             if campo_descripcion.startswith("COMPUTADORA, LENOVO"):
                 palabras_filtradas = [palabra.replace('-', '') for palabra in palabras_filtradas]
                 for partnumber in conjunto_part_numbers:
@@ -191,17 +227,24 @@ class OperacionesDataframe():
                         partnumber_found_desc.append(partnumber)
                         return "@partnumber_inicia_LENOVO-" + partnumber
 
-                                
-            
-        
-            conjunto_partnumber_hashtag = [pn[:pn.find("#")] for pn in conjunto_part_numbers if "#" in pn]
-            if len(palabras_filtradas) > 0:
-                for palabra in palabras_filtradas:
 
-                    if palabra in conjunto_partnumber_hashtag:
-                        partnumber_found_desc.append(palabra)
-                        return palabra
-                             
+
+            if 'LENOVO' not in campo_descripcion:
+                for id_producto in df_deltron['PRODUCTO'].values:
+                    if id_producto in campo_descripcion:
+                        idx_producto = df_deltron['PART_NUMBER'][df_deltron['PRODUCTO'] == id_producto].values[0]
+                        return f"@ADVANCE-{idx_producto}"
+
+
+                                
+            if "#" in campo_descripcion:
+
+                if len(palabras_filtradas) > 0:
+                    for palabra in palabras_filtradas:
+
+                        if palabra in self.conjunto_part_numbers_hashtag:
+                            partnumber_found_desc.append(palabra)
+                            return palabra
 
 
             if len(palabras_filtradas) > 0:
@@ -219,18 +262,18 @@ class OperacionesDataframe():
             # partnumber_found_desc = np.unique(partnumber_found_desc)
             # saldo_part_num = conjunto_part_numbers[~np.isin(conjunto_part_numbers, partnumber_found_desc)]
             saldo_part_num_chunks = sorted(conjunto_part_numbers, key=len, reverse=True)
-            mask = np.array([len(x) > 8 for x in saldo_part_num_chunks])
-            saldo_part_num_chunks_lenmay_8 = np.array(saldo_part_num_chunks)[mask]
-            chunks = np.array_split(saldo_part_num_chunks_lenmay_8, max(1, len(saldo_part_num_chunks_lenmay_8) // 1000))
+            mask = np.array([len(x) > 7 for x in saldo_part_num_chunks])
+            saldo_part_num_chunks_lenmay_7 = np.array(saldo_part_num_chunks)[mask]
+            chunks = np.array_split(saldo_part_num_chunks_lenmay_7, max(1, len(saldo_part_num_chunks_lenmay_7) // 1000))
             
 
-            if "HEWLETT PACKARD" in campo_descripcion:
-                hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_8 if "#" in pn]
+            if "HEWLETT PACKARD" in campo_descripcion and not campo_descripcion.startswith("MEMORIA SSD"):
+                hp_chunks = [pn for pn in saldo_part_num_chunks_lenmay_7 if "#" in pn]
                 chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 1000))
                 
                 mejor_similitud = 0
                 mejor_partnumber = None
-                umbral = 60
+                umbral = 77.7
                 
                 for chunk in chunks:
                     for partnumb_del in chunk:
@@ -239,12 +282,12 @@ class OperacionesDataframe():
                         if similarity > mejor_similitud and similarity > umbral:
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
-                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                return f"@simil_60_hewpack-{mejor_partnumber} - {mejor_similitud}" if mejor_partnumber else None
             
-            elif campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
+            elif (campo_descripcion.startswith("COMPUTADORA, LENOVO") or campo_descripcion.startswith("COMPUTADORA,LENOVO")\
                 or campo_descripcion.startswith("MEMORIA RAM, KINGSTON") or 'TEROS' in campo_descripcion\
-                    or 'AORUS' in campo_descripcion or 'ASUS' in campo_descripcion\
-                        or 'SEAGATE' in campo_descripcion or 'ADVANCE' in campo_descripcion:
+                    or 'AORUS' in campo_descripcion or ('ASUS' in campo_descripcion and not campo_descripcion.startswith("TARJETA DE VIDEO,ASUS"))\
+                        or 'SEAGATE' in campo_descripcion or 'ADVANCE' in campo_descripcion) and 'NO NECESITA PERMISO' not in campo_descripcion:
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral = 75
@@ -256,10 +299,10 @@ class OperacionesDataframe():
                         if similarity > mejor_similitud and similarity > umbral:
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
-                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                return f"@simil_75_adv_te-{mejor_partnumber}" if mejor_partnumber else None
             
             elif campo_descripcion.startswith("TARJETA MADRE") or 'GIGABYTE' in campo_descripcion\
-                    or 'MSI' in campo_descripcion or 'WESTER' in campo_descripcion:
+                    or 'MSI' in campo_descripcion or 'WESTER' in campo_descripcion or campo_descripcion.startswith("MOUSE,DELL"):
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral = 60
@@ -272,11 +315,11 @@ class OperacionesDataframe():
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
 
-                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                return f"@simil_60_te_wes_giga_msi-{mejor_partnumber}" if mejor_partnumber else None
             
             elif campo_descripcion.startswith("TARJETA GRAFICA"):
-                mask = [len(pn) > 10  for pn in saldo_part_num_chunks_lenmay_8]
-                hp_chunks = np.array(saldo_part_num_chunks_lenmay_8)[mask]
+                mask = [len(pn) > 10  for pn in saldo_part_num_chunks_lenmay_7]
+                hp_chunks = np.array(saldo_part_num_chunks_lenmay_7)[mask]
                 chunks = np.array_split(hp_chunks, max(1, len(hp_chunks) // 1000))
                 mejor_similitud = 0
                 mejor_partnumber = None
@@ -290,10 +333,11 @@ class OperacionesDataframe():
                             mejor_similitud = similarity  
                             mejor_partnumber = partnumb_del
 
-                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                return f"@simil_95_tarj_gra-{mejor_partnumber}" if mejor_partnumber else None
             
             elif 'RX' in campo_descripcion or 'RTX' in campo_descripcion or 'GTX' in campo_descripcion\
-                or 'LANDBYTE' in campo_descripcion:              
+                or 'LANDBYTE' in campo_descripcion or campo_descripcion.startswith("PROCESADOR,INTEL")\
+                    or campo_descripcion.startswith("PROCESADOR,AMD"):              
                 mejor_similitud = 0
                 mejor_partnumber = None
                 umbral = 77.5
@@ -305,10 +349,9 @@ class OperacionesDataframe():
                         if similarity > mejor_similitud and similarity > umbral:
                             mejor_similitud = similarity
                             mejor_partnumber = partnumb_del
-                return f"@simil_prox-{mejor_partnumber}" if mejor_partnumber else None
+                return f"@simil_77_5_rx_rtx_gtx_land-{mejor_partnumber}" if mejor_partnumber else None
                 
 
-        
 
             
 
@@ -334,13 +377,12 @@ class OperacionesDataframe():
 
 
 
-        # df_importacion.to_excel("./return_data/df_importacion_21.xlsx")
+        df_importacion.to_excel("./return_data/df_importacion_23.xlsx")
         
 
 
 
         self.dataframe_importacion = df_importacion.copy()
-        
         print("***")
         print(f"\n\nBusqueda part numbers. Tiempo de ejecución: {time.time()-inicio} segundos")
         print("\n")

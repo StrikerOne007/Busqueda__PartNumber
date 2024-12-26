@@ -35,6 +35,8 @@ class AppManager:
         print("1.-Cargando datos desde SQL...")
         df_sql = self.dao.carga_data_sql(consulta, columnas)
         print(df_sql.head())
+        # df_sql.to_excel("df_importacion_previo.xlsx")
+
         if df_sql is not None:
             AppManager.data_importacion = df_sql
             print("Datos cargados desde SQL con éxito.\n")
@@ -106,13 +108,15 @@ class AppManager:
                 return x
             
         # print(df_busqueda_partnumber_importacion.head())
-        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].apply(withdraw_words)
         print(df_busqueda_partnumber_importacion.head())
+        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].apply(withdraw_words)
+        
 
         print(f"TAMAÑO DE LA TABLA: {df_busqueda_partnumber_importacion.shape}")
         df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
+        df_to_sql = df_to_sql[(df_to_sql['resultado_busqueda2'] != 'None') & (df_to_sql['resultado_busqueda2'].notna())]
+        print(df_to_sql.head())
         # self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
-
 
 
 
