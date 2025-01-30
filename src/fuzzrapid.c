@@ -1479,7 +1479,7 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "fuzzrapid.pyx",
+  "src\\\\fuzzrapid.pyx",
 };
 /* #### Code section: utility_code_proto_before_types ### */
 /* ForceInitThreads.proto */
@@ -2070,10 +2070,10 @@ static const char __pyx_k_similarity[] = "similarity";
 static const char __pyx_k_funcion_fuzz[] = "funcion_fuzz";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
 static const char __pyx_k_partnumb_del[] = "partnumb_del";
-static const char __pyx_k_fuzzrapid_pyx[] = "fuzzrapid.pyx";
 static const char __pyx_k_partial_ratio[] = "partial_ratio";
 static const char __pyx_k_src_fuzzrapid[] = "src.fuzzrapid";
 static const char __pyx_k_campo_descripcion[] = "campo_descripcion";
+static const char __pyx_k_src_fuzzrapid_pyx[] = "src\\fuzzrapid.pyx";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 /* #### Code section: decls ### */
@@ -2114,7 +2114,6 @@ typedef struct {
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_funcion_fuzz;
   PyObject *__pyx_n_s_fuzz;
-  PyObject *__pyx_kp_s_fuzzrapid_pyx;
   PyObject *__pyx_n_s_import;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_n_s_main;
@@ -2124,6 +2123,7 @@ typedef struct {
   PyObject *__pyx_n_s_rapidfuzz;
   PyObject *__pyx_n_s_similarity;
   PyObject *__pyx_n_s_src_fuzzrapid;
+  PyObject *__pyx_kp_s_src_fuzzrapid_pyx;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_tuple__2;
   PyObject *__pyx_codeobj__3;
@@ -2176,7 +2176,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_funcion_fuzz);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuzz);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_fuzzrapid_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
@@ -2186,6 +2185,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_rapidfuzz);
   Py_CLEAR(clear_module_state->__pyx_n_s_similarity);
   Py_CLEAR(clear_module_state->__pyx_n_s_src_fuzzrapid);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_src_fuzzrapid_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_tuple__2);
   Py_CLEAR(clear_module_state->__pyx_codeobj__3);
@@ -2216,7 +2216,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_funcion_fuzz);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuzz);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_fuzzrapid_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
@@ -2226,6 +2225,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_rapidfuzz);
   Py_VISIT(traverse_module_state->__pyx_n_s_similarity);
   Py_VISIT(traverse_module_state->__pyx_n_s_src_fuzzrapid);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_src_fuzzrapid_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_tuple__2);
   Py_VISIT(traverse_module_state->__pyx_codeobj__3);
@@ -2266,7 +2266,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_funcion_fuzz __pyx_mstate_global->__pyx_n_s_funcion_fuzz
 #define __pyx_n_s_fuzz __pyx_mstate_global->__pyx_n_s_fuzz
-#define __pyx_kp_s_fuzzrapid_pyx __pyx_mstate_global->__pyx_kp_s_fuzzrapid_pyx
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
@@ -2276,6 +2275,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_rapidfuzz __pyx_mstate_global->__pyx_n_s_rapidfuzz
 #define __pyx_n_s_similarity __pyx_mstate_global->__pyx_n_s_similarity
 #define __pyx_n_s_src_fuzzrapid __pyx_mstate_global->__pyx_n_s_src_fuzzrapid
+#define __pyx_kp_s_src_fuzzrapid_pyx __pyx_mstate_global->__pyx_kp_s_src_fuzzrapid_pyx
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
 #define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
@@ -2418,6 +2418,7 @@ static PyObject *__pyx_pf_3src_9fuzzrapid_funcion_fuzz(CYTHON_UNUSED PyObject *_
  * def funcion_fuzz(partnumb_del, campo_descripcion):
  *     similarity = fuzz.partial_ratio(partnumb_del, campo_descripcion)             # <<<<<<<<<<<<<<
  *     return similarity
+ * 
  */
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_fuzz); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -2453,6 +2454,8 @@ static PyObject *__pyx_pf_3src_9fuzzrapid_funcion_fuzz(CYTHON_UNUSED PyObject *_
  * def funcion_fuzz(partnumb_del, campo_descripcion):
  *     similarity = fuzz.partial_ratio(partnumb_del, campo_descripcion)
  *     return similarity             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_similarity);
@@ -2504,7 +2507,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_funcion_fuzz, __pyx_k_funcion_fuzz, sizeof(__pyx_k_funcion_fuzz), 0, 0, 1, 1},
     {&__pyx_n_s_fuzz, __pyx_k_fuzz, sizeof(__pyx_k_fuzz), 0, 0, 1, 1},
-    {&__pyx_kp_s_fuzzrapid_pyx, __pyx_k_fuzzrapid_pyx, sizeof(__pyx_k_fuzzrapid_pyx), 0, 0, 1, 0},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
@@ -2514,6 +2516,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_rapidfuzz, __pyx_k_rapidfuzz, sizeof(__pyx_k_rapidfuzz), 0, 0, 1, 1},
     {&__pyx_n_s_similarity, __pyx_k_similarity, sizeof(__pyx_k_similarity), 0, 0, 1, 1},
     {&__pyx_n_s_src_fuzzrapid, __pyx_k_src_fuzzrapid, sizeof(__pyx_k_src_fuzzrapid), 0, 0, 1, 1},
+    {&__pyx_kp_s_src_fuzzrapid_pyx, __pyx_k_src_fuzzrapid_pyx, sizeof(__pyx_k_src_fuzzrapid_pyx), 0, 0, 1, 0},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {0, 0, 0, 0, 0, 0, 0}
   };
@@ -2539,7 +2542,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__2 = PyTuple_Pack(3, __pyx_n_s_partnumb_del, __pyx_n_s_campo_descripcion, __pyx_n_s_similarity); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fuzzrapid_pyx, __pyx_n_s_funcion_fuzz, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_fuzzrapid_pyx, __pyx_n_s_funcion_fuzz, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;

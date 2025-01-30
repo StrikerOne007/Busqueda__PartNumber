@@ -1,0 +1,31 @@
+
+services:
+  python-app:
+    build: .
+    environment:
+      - N8N_URL=http://n8n-local:5678  # Usa el nombre del contenedor de n8n
+    depends_on:
+      - n8n-local
+    networks:
+      - n8n-network
+
+  n8n-local:
+    image: n8nio/n8n
+    container_name: n8n-local2
+    ports:
+      - "127.0.0.1:5679:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER= gustavo.trillo@deltron.com.pe
+      - N8N_BASIC_AUTH_PASSWORD= Gust1192*
+    volumes:
+      - /var/lib/docker/volumes/n8n_data/_data
+    networks:
+      - n8n-network
+
+networks:
+  n8n-network:
+    driver: bridge
+
+
+

@@ -3,17 +3,19 @@ import re
 import mysql.connector
 from mysql.connector import Error
 import os
-from dotenv import load_dotenv #leer archivo env
+from dotenv import load_dotenv  # leer archivo env
 from src.conexionbd import Conexion_BD, DAO
 from src.operaciones_dataframe import OperacionesDataframe
 from src.analisis_data import AnalisisDatos
 
 import sys
+
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("ignore")
 
-pd.options.display.max_rows = None  #vista de mayor cantidad de filas
+pd.options.display.max_rows = None  # vista de mayor cantidad de filas
 
 
 class AppManager:
@@ -21,7 +23,8 @@ class AppManager:
     data_importacion = None
     data_modelo = None
     data_final_procesada = None
-    grouped = None  
+    grouped = None
+
     def __init__(self):
         self.dao = DAO()
         self.operaciones = OperacionesDataframe()
@@ -41,8 +44,6 @@ class AppManager:
             AppManager.data_importacion = df_sql
             print("Datos cargados desde SQL con éxito.\n")
 
-
-
     def ejecutar_flujo_data_deltron(self, consulta, columnas):
         # Cargar datos desde la base de datos
         print("==============================================================")
@@ -53,11 +54,9 @@ class AppManager:
         print(df_sql.head())
         if df_sql is not None:
             AppManager.data_deltron = df_sql
-            pass #print("Datos cargados desde SQL con éxito.")
+            pass  # print("Datos cargados desde SQL con éxito.")
 
-
-
-    def ejecutar_flujo_data_modelo(self,consulta,columnas):
+    def ejecutar_flujo_data_modelo(self, consulta, columnas):
         # Cargar datos desde la base de datos
         print("\n==============================================================")
         print("\t\t TABLA MODELO CRUCE PART NUMBERT GD")
@@ -67,12 +66,9 @@ class AppManager:
         print(df_sql.head())
         if df_sql is not None:
             AppManager.data_modelo = df_sql
-            pass #print("Datos cargados desde SQL con éxito.")
-
-
+            pass  # print("Datos cargados desde SQL con éxito.")
 
     def ejecutar_operaciones_dataframe(self):
-
         print("\n==============================================================")
         print("CRUCES PARA LA COINCIDENCIA DE PART NUMBER ENTRE TABLA IMPORTACION Y GD")
         print("==============================================================\n")
@@ -81,44 +77,43 @@ class AppManager:
         self.operaciones.dataframe_modelo = AppManager.data_modelo
         # self.operaciones.dataframe_importacion.to_excel("df_importacion_revision.xlsx")
 
-
         print("1.-Aplicando operaciones para busqueda de datos por Sistemas...\n")
         print("***")
         df_busqueda_partnumber_importacion = self.operaciones.buscar_part_number(
-            campo_data_deltron = 'PART_NUMBER',
-            campo_iterable = 'value',
-            nueva_columna = 'resultado_busqueda2',
-            campo_descripcion = 'DS_DESC_COM',
-            valores_nulos = {'value':'0','SA_Value':'0'}
+            nueva_columna="resultado_busqueda2",
+            valores_nulos={"value": "0", "SA_Value": "0"},
         )
         if df_busqueda_partnumber_importacion is not None:
             pass
 
-
         print("\n CARGA DE DATA A BASE DE DATOS\n")
         # CONVERTIR EL RESULTADO DE BUSQUEDA A STRING
-        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].astype(str)
-        
-
+        df_busqueda_partnumber_importacion["resultado_busqueda2"] = (
+            df_busqueda_partnumber_importacion["resultado_busqueda2"].astype(str)
+        )
 
         def withdraw_words(x):
             if x is not None and x.startswith("@"):
-                return x[x.find("-")+1:]
+                return x[x.find("-") + 1 :]
             else:
                 return x
-            
+
         # print(df_busqueda_partnumber_importacion.head())
         print(df_busqueda_partnumber_importacion.head())
-        df_busqueda_partnumber_importacion['resultado_busqueda2'] = df_busqueda_partnumber_importacion['resultado_busqueda2'].apply(withdraw_words)
-        
+        df_busqueda_partnumber_importacion["resultado_busqueda2"] = (
+            df_busqueda_partnumber_importacion["resultado_busqueda2"].apply(
+                withdraw_words
+            )
+        )
 
         print(f"TAMAÑO DE LA TABLA: {df_busqueda_partnumber_importacion.shape}")
-        df_to_sql = df_busqueda_partnumber_importacion[['resultado_busqueda2','ID']]
-        df_to_sql = df_to_sql[(df_to_sql['resultado_busqueda2'] != 'None') & (df_to_sql['resultado_busqueda2'].notna())]
-        print(df_to_sql.head())
-        # self.dao.actualiza_data_sql(df_to_sql, 'resultado_busqueda2', 'ID')
-
-
+        df_to_sql = df_busqueda_partnumber_importacion[["resultado_busqueda2", "ID"]]
+        df_to_sql = df_to_sql[
+            (df_to_sql["resultado_busqueda2"] != "None")
+            & (df_to_sql["resultado_busqueda2"].notna())
+        ]
+        print(f"TAMAÑO DE LA TABLA: {df_to_sql.shape} ACTUALIZADA")
+        self.dao.actualiza_data_sql(df_to_sql, "resultado_busqueda2", "ID")
 
     #     print("-------------------------------------------------------------")
     #     print("2.-Conteo resultados de busqueda por Sistemas...")
@@ -128,7 +123,6 @@ class AppManager:
     #     )
     #     if conteo_resultado_importacion is not None:
     #         print(f"-Se encontraron: {conteo_resultado_importacion['encontrado']}, de un total {conteo_resultado_importacion['encontrado']+conteo_resultado_importacion['no encontrado']}")
-
 
     #     print("-------------------------------------------------------------")
     #     print("\n3.-Aplicando operaciones para busqueda de datos sistema por modelo...")
@@ -144,7 +138,6 @@ class AppManager:
     #     if df_busqueda_partnumber_mod_importacion is not None:
     #         pass #print(df_busqueda_partnumber_mod_importacion.head())
 
-
     #     print("-------------------------------------------------------------")
     #     print("4.-Conteo resultados de busqueda por Sistemas - Modelo...")
     #     conteo_resultado_importacion = self.operaciones.conteo_resultados(
@@ -153,7 +146,6 @@ class AppManager:
     #     )
     #     if conteo_resultado_importacion is not None:
     #         print(f"-Se encontraron: {conteo_resultado_importacion['encontrado']}, de un total {conteo_resultado_importacion['encontrado']+conteo_resultado_importacion['no encontrado']}")
-
 
     #     print("-------------------------------------------------------------")
     #     print("\n5.-Aplicando operaciones para busqueda de datos por IA...")
@@ -166,7 +158,6 @@ class AppManager:
     #     if df_busqueda_partnumber_importacion_IA is not None:
     #         pass #df_busqueda_partnumber_importacion_IA
 
-
     #     print("-------------------------------------------------------------")
     #     print("6.-Conteo resultados de busqueda por IA...")
     #     conteo_resultado_importacion = self.operaciones.conteo_resultados(
@@ -176,7 +167,6 @@ class AppManager:
     #     if conteo_resultado_importacion is not None:
     #         print(f"-Se encontraron: {conteo_resultado_importacion['encontrado']}, de un total {conteo_resultado_importacion['encontrado']+conteo_resultado_importacion['no encontrado']}")
 
-        
     #     print("-------------------------------------------------------------")
     #     print("\n7.-Aplicando operaciones para busqueda de modelos IA...")
     #     df_busqueda_partnumber_mod_importacion_IA = self.operaciones.buscar_part_number_modelo(
@@ -191,7 +181,6 @@ class AppManager:
     #     if df_busqueda_partnumber_mod_importacion_IA is not None:
     #         pass #print(df_busqueda_partnumber_mod_importacion.head())
 
-        
     #     print("-------------------------------------------------------------")
     #     print("8.-Conteo resultados de busqueda por IA - Modelo...")
     #     conteo_resultado_importacion = self.operaciones.conteo_resultados(
@@ -226,7 +215,6 @@ class AppManager:
     #     if df_conteo_campo_largo is not None:
     #         pass #print(df_conteo_campo_largo['value'].head())
 
-
     #     print("-------------------------------------------------------------")
     #     print("10.-Generando porcentajes de coincidencia...")
     #     df_porcentajes_coincidencia = self.operaciones.porcentajes_coicidencia(
@@ -239,7 +227,6 @@ class AppManager:
     #         df_porcentajes_coincidencia.to_excel("df_porcentajes_coincidencia.xlsx")
     #         pass #print(df_porcentajes_coincidencia.head())
 
-        
     #     print("-------------------------------------------------------------")
     #     print("11.-Procesando data final...")
     #     df_final_procesada = self.operaciones.procesar_data_final(
@@ -267,10 +254,6 @@ class AppManager:
     #     )
     #     if df_final_procesada is not None:
     #         AppManager.data_final_procesada = df_final_procesada
-
-
-
-
 
     # def ejecutar_analisis_datos(self):
     #     try:
@@ -309,7 +292,6 @@ class AppManager:
     #         if resumen_tipo_producto is not None:
     #             print(resumen_tipo_producto)
 
-
     #         print("\n TABLA RESUMEN DE PROBABILIDAD POR PART NUMBER SISTEMAS\n")
     #         resumen_tipo_producto = self.analisis.tabla_interactiva(
     #             segmentador0='DS_IMPORTADOR',
@@ -321,7 +303,6 @@ class AppManager:
     #         if resumen_tipo_producto is not None:
     #             print(resumen_tipo_producto)
 
-
     #         print("\n TABLA RESUMEN DE PROBABILIDAD POR PART NUMBER IA\n")
     #         resumen_tipo_producto = self.analisis.tabla_interactiva(
     #             segmentador0='DS_IMPORTADOR',
@@ -332,7 +313,6 @@ class AppManager:
     #         )
     #         if resumen_tipo_producto is not None:
     #             print(resumen_tipo_producto)
-    
 
     #         print("\n CARGA DE DATA A BASE DE DATOS\n")
     #         df_to_sql = AppManager.data_final_procesada[['resultado_busqueda_1','Segm_prob_sistemas_GD','ID']]
@@ -352,4 +332,3 @@ class AppManager:
     #         print("Objeto no puede ser iterado - ejecutar_analisis_datos", e)
     #     except Exception as e:
     #         print(f"Problema presentado en {e} - ejecutar_analisis_datos")
-
